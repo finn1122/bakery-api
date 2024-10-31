@@ -17,7 +17,6 @@ class JwtMiddleware
      */
     public function handle($request, Closure $next)
     {
-        Log::info('JwtMiddleware: Handling request');
         try {
             if (!$user = auth()->guard('api')->user()) { // Usa el guard 'api' con JWT
                 return response()->json(['error' => 'User not found'], 404);
