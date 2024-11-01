@@ -98,14 +98,16 @@ class RegisterController extends Controller
             ], 400);
         }
 
+        // Verificar si el usuario ya ha verificado su correo electrónico
         if ($user->hasVerifiedEmail()) {
             return response()->json([
-                'message' => 'El correo electrónico ya ha sido verificado'
-            ], 400);
+                'message' => 'El correo electrónico ya ha sido verificado previamente.'
+            ], 200); // Cambiar a código 200 ya que la verificación fue exitosa.
         }
 
+        // Marcar el correo electrónico como verificado
         if ($user->markEmailAsVerified()) {
-            $user->active = true;
+            $user->active = true; // Marcar al usuario como activo
             $user->save();
             event(new Verified($user));
 
