@@ -42,14 +42,20 @@ class JWTAuthController extends Controller
         $credentials = $request->only('email', 'password');
 
         try {
+            // Intentar autenticar al usuario con las credenciales proporcionadas.
             if (! $token = JWTAuth::attempt($credentials)) {
                 return response()->json(['error' => 'Invalid credentials'], 401);
             }
 
-            // Get the authenticated user.
+            // Obtener el usuario autenticado.
             $user = auth()->user();
 
-            // (optional) Attach the role to the token.
+            // Verificar si el usuario ha verificado su correo electrónico.
+            if (! $user->hasVerifiedEmail()) {
+                return response()->json(['error' => 'Email not verified'], 403); // Código de estado 403 para prohibido.
+            }
+
+            // (opcional) Adjuntar el rol al token.
             $token = JWTAuth::claims(['role' => $user->role])->fromUser($user);
 
             return response()->json(compact('token'));

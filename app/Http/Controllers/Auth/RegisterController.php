@@ -7,10 +7,12 @@ use App\Http\Controllers\Email\EmailController;
 use App\Mail\WelcomeEmail;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
 
 
@@ -40,54 +42,130 @@ class RegisterController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'active' => false, // Usuario inactivo hasta verificar email
         ]);
 
-        event(new Registered($user));
+        // Generar URL de verificación
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())]
+        );
 
-        // Enviar el correo de bienvenida
-        $this->emailController->sendWelcomeEmail($user);
+        // Enviar correo de verificación
+        try {
+            $emailResult = $this->emailController->sendVerificationEmail($user, $verificationUrl);
 
-        return response()->json([
-            'message' => 'Usuario registrado exitosamente. Por favor verifica tu email.',
-            'user' => $user
-        ], 201);
+            if (!$emailResult['success']) {
+                return response()->json([
+                    'message' => 'Usuario registrado pero hubo un problema al enviar el correo de verificación.',
+                    'user' => $user,
+                    'email_error' => $emailResult['message']
+                ], 201);
+            }
+
+            event(new Registered($user));
+
+            return response()->json([
+                'message' => 'Usuario registrado exitosamente. Por favor verifica tu email.',
+                'user' => $user
+            ], 201);
+        } catch (\Exception $e) {
+            \Log::error('Error en registro de usuario: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al procesar el registro',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function verifyEmail(string $id, string $hash): JsonResponse
+    public function verifyEmail(Request $request): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = User::find($request->route('id'));
 
-        if (! hash_equals((string) $hash, sha1($user->getEmailForVerification()))) {
-            return response()->json(['message' => 'Link de verificación inválido'], 400);
+        if (!$user) {
+            return response()->json([
+                'message' => 'Usuario no encontrado'
+            ], 404);
+        }
+
+        if (!hash_equals(
+            (string) $request->route('hash'),
+            sha1($user->getEmailForVerification())
+        )) {
+            return response()->json([
+                'message' => 'El enlace de verificación no es válido'
+            ], 400);
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email ya verificado'], 400);
+            return response()->json([
+                'message' => 'El correo electrónico ya ha sido verificado'
+            ], 400);
         }
 
-        $user->markEmailAsVerified();
+        if ($user->markEmailAsVerified()) {
+            $user->active = true;
+            $user->save();
+            event(new Verified($user));
 
-        return response()->json(['message' => 'Email verificado exitosamente']);
+            // Enviar correo de bienvenida después de verificar
+            $this->emailController->sendWelcomeEmail($user);
+        }
+
+        return response()->json([
+            'message' => 'Correo electrónico verificado exitosamente'
+        ], 200);
     }
 
     public function resendVerification(Request $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
+        $validator = Validator::make($request->all(), [
+            'email' => ['required', 'email']
         ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
 
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'Usuario no encontrado'], 404);
+            return response()->json([
+                'message' => 'No se encontró un usuario con ese correo electrónico'
+            ], 404);
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email ya verificado'], 400);
+            return response()->json([
+                'message' => 'El correo electrónico ya ha sido verificado'
+            ], 400);
         }
 
-        $user->sendEmailVerificationNotification();
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->getEmailForVerification())]
+        );
 
-        return response()->json(['message' => 'Link de verificación reenviado']);
+        try {
+            $emailResult = $this->emailController->sendVerificationEmail($user, $verificationUrl);
+
+            if (!$emailResult['success']) {
+                return response()->json([
+                    'message' => 'Error al enviar el correo de verificación',
+                    'error' => $emailResult['message']
+                ], 500);
+            }
+
+            return response()->json([
+                'message' => 'Se ha enviado un nuevo enlace de verificación'
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al enviar el correo de verificación',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -49,19 +49,37 @@ class EmailController extends Controller
             ];
         }
     }
-    public function resendWelcomeEmail(User $user): JsonResponse
+    /**
+     * Enviar correo de verificación de cuenta.
+     *
+     * @param User $user
+     * @param string $verificationUrl
+     * @return array
+     */
+    public function sendVerificationEmail(User $user, string $verificationUrl): array
     {
-        $result = $this->sendWelcomeEmail($user);
+        try {
+            $htmlContent = view('emails.verify', [
+                'userName' => $user->name,
+                'verificationUrl' => $verificationUrl
+            ])->render();
 
-        if ($result['success']) {
-            return response()->json([
-                'message' => 'Correo de bienvenida reenviado exitosamente'
-            ], 200);
+            $result = $this->sendinblueService->sendEmail(
+                [['email' => $user->email, 'name' => $user->name]],
+                'Verifica tu cuenta en ' . config('app.name'),
+                $htmlContent
+            );
+
+            return [
+                'success' => true,
+                'message' => 'Correo de verificación enviado exitosamente',
+                'data' => $result
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error al enviar el correo de verificación: ' . $e->getMessage()
+            ];
         }
-
-        return response()->json([
-            'message' => 'Error al reenviar el correo de bienvenida',
-            'error' => $result['message']
-        ], 500);
     }
 }
