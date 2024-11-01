@@ -3,15 +3,27 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Email\EmailController;
+use App\Mail\WelcomeEmail;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
+
 
 class RegisterController extends Controller
 {
+
+    protected $emailController;
+
+    public function __construct(EmailController $emailController)
+    {
+        $this->emailController = $emailController;
+    }
+
     public function register(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -31,6 +43,9 @@ class RegisterController extends Controller
         ]);
 
         event(new Registered($user));
+
+        // Enviar el correo de bienvenida
+        $this->emailController->sendWelcomeEmail($user);
 
         return response()->json([
             'message' => 'Usuario registrado exitosamente. Por favor verifica tu email.',
