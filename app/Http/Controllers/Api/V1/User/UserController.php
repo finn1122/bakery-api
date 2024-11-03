@@ -12,7 +12,7 @@ class UserController extends Controller
 {
     public function getBakery(): JsonResponse
     {
-        Log::info('User bakery');
+        Log::info('getBakery');
         $user = Auth::user();
 
         if ($user->bakery()->exists()) {
