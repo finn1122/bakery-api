@@ -15,17 +15,16 @@ class JwtMiddleware
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle($request, Closure $next)
+    public function handle(Request $request, Closure $next)
     {
         try {
-            if (!$user = auth()->guard('api')->user()) { // Usa el guard 'api' con JWT
+            if (!$user = JWTAuth::parseToken()->authenticate()) {
                 return response()->json(['error' => 'User not found'], 404);
             }
         } catch (JWTException $e) {
             return response()->json(['error' => 'Token is invalid'], 400);
         }
 
-        // Añadir el usuario autenticado al request
         $request->auth = $user;
         return $next($request);
     }

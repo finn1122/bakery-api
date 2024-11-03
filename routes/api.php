@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\JWTAuthController;
 use App\Http\Middleware\JwtMiddleware;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Api\V1\User\UserController;
 
 Route::get('/', function () {
     return response()->json([
@@ -14,17 +15,19 @@ Route::get('/', function () {
     ]);
 });
 
-Route::post('register', [RegisterController::class, 'register']);
-Route::get('/email/verify/{id}/{hash}', [RegisterController::class, 'verifyEmail'])
-    ->name('verification.verify');
-Route::post('/email/verification-notification', [RegisterController::class, 'resendVerification'])
-    ->middleware(['throttle:6,1'])
-    ->name('verification.send');
+//Route::post('register', [RegisterController::class, 'register']);
 
 
-Route::post('login', [JWTAuthController::class, 'login']);
+Route::prefix('v1')->namespace('App\Http\Controllers\Api\V1')->group(function () {
+    // Rutas públicas que no requieren autenticación
+    Route::post('login', [JWTAuthController::class, 'login']);
+    Route::post('register', [RegisterController::class, 'register']);
+    Route::get('/email/verify/{id}/{hash}', [RegisterController::class, 'verifyEmail'])
+        ->name('verification.verify');
+    Route::post('/email/verification-notification', [RegisterController::class, 'resendVerification'])
+        ->middleware(['throttle:6,1'])
+        ->name('verification.send');
 
-Route::middleware([JwtMiddleware::class])->group(function () {
-    Route::get('user', [JWTAuthController::class, 'getUser']);
-    Route::post('logout', [JWTAuthController::class, 'logout']);
+    // Rutas que requieren autenticación
+    Route::middleware(JwtMiddleware::class)->get('user/bakery', [UserController::class, 'getBakery']);
 });

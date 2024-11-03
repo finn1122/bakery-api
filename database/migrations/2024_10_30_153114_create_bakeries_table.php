@@ -18,7 +18,8 @@ return new class extends Migration
             $table->string('opening_hours', 100)->nullable();
             $table->string('profile_picture', 255)->nullable(); // URL de la foto de perfil
             $table->boolean('active')->default(true);
-            $table->timestamps(); // Crea created_at y updated_at
+            $table->unsignedInteger('user_id');
+            $table->timestamps();
         });
     }
 

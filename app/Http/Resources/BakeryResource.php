@@ -15,6 +15,7 @@ class BakeryResource extends JsonResource
             'address' => $this->address,
             'openingHours' => $this->opening_hours,
             'profilePicture' => $this->profile_picture,
+            'userId' => $this->user_id,
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,
             'active' => $this->active,
