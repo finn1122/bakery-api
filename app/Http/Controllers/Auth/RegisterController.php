@@ -11,6 +11,7 @@ use Illuminate\Auth\Events\Verified;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Validator;
@@ -71,7 +72,7 @@ class RegisterController extends Controller
                 'user' => $user
             ], 201);
         } catch (\Exception $e) {
-            \Log::error('Error en registro de usuario: ' . $e->getMessage());
+            Log::error('Error en registro de usuario: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Error al procesar el registro',
                 'error' => $e->getMessage()
@@ -122,6 +123,7 @@ class RegisterController extends Controller
 
     public function resendVerification(Request $request): JsonResponse
     {
+        Log::info('resendVerification');
         $validator = Validator::make($request->all(), [
             'email' => ['required', 'email']
         ]);
