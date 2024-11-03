@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -11,6 +12,13 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 class JWTAuthController extends Controller
 {
+
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
     // User login
     public function login(Request $request)
     {
@@ -37,9 +45,14 @@ class JWTAuthController extends Controller
             }
 
             // (opcional) Adjuntar el rol al token.
-            $token = JWTAuth::claims(['role' => $user->role])->fromUser($user);
+            $token = JWTAuth::claims(['role' => $user->getRoleNames()])->fromUser($user);
 
-            return response()->json(compact('token'));
+            $userProfile = $this->userService->getUserProfile($user);
+
+            return response()->json([
+                'token' => $token,
+                'user' => $userProfile
+            ]);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Could not create token'], 500);
         }
