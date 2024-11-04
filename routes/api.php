@@ -6,6 +6,7 @@ use App\Http\Controllers\JWTAuthController;
 use App\Http\Middleware\JwtMiddleware;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\User\UserController;
+use App\Http\Controllers\Api\V1\Bakery\BakeryController;
 
 Route::get('/', function () {
     return response()->json([
@@ -28,6 +29,13 @@ Route::prefix('v1')->namespace('App\Http\Controllers\Api\V1')->group(function ()
         ->middleware(['throttle:6,1'])
         ->name('verification.send');
 
-    // Rutas que requieren autenticación
-    Route::middleware(JwtMiddleware::class)->get('user/bakery', [UserController::class, 'getBakery']);
+    // Grupo de rutas que requieren autenticación
+    Route::middleware([JwtMiddleware::class])->group(function () {
+
+        // [User]
+        Route::prefix('user/{user_id}')->group(function () {
+            Route::get('bakery', [UserController::class, 'getBakery']);
+            Route::post('bakery', [UserController::class, 'createBakeryByUserId']);
+        });
+    });
 });
