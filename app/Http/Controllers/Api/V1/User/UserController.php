@@ -2,17 +2,28 @@
 
 namespace App\Http\Controllers\Api\V1\User;
 
+use App\Features\Ftp\Domain\Repositories\FtpRepositoryInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BakeryResource;
+use App\Models\Bakery;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
+    private $ftpInterface;
+
+    public function __construct(FtpRepositoryInterface $ftpInterface)
+    {
+        $this->ftpInterface = $ftpInterface;
+    }
+
+
     public function getBakery(): JsonResponse
     {
         Log::info('getBakery');
@@ -29,8 +40,6 @@ class UserController extends Controller
     {
         try {
             Log::info('createBakeryByUserId');
-            Log::debug($request->all());
-
             // Manipular datos antes de la validación
             $request->merge([
                 'active' => filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
@@ -51,6 +60,8 @@ class UserController extends Controller
 
             $validatedData = $validator->validated();
 
+            //$bakery = Bakery::create($data);
+
             // Almacenamiento de datos en variables individuales
             $name = $validatedData['name'];
             $address = $validatedData['address'];
@@ -63,13 +74,19 @@ class UserController extends Controller
             // Verificar si el usuario ya tiene una panadería
             $bakery = $user->bakery;
 
+            // Manejar el archivo de imagen si se proporciona
+            $profilePicturePath = $bakery ? $bakery->profile_picture : null;
+            if ($request->hasFile('profilePicture')) {
+                $profilePicturePath = $this->ftpInterface->saveBakeryProfileFile($userId, $request->file('profilePicture'));
+            }
+
             if ($bakery) {
                 // Actualizar la panadería existente
                 $bakery->name = $name;
                 $bakery->address = $address;
                 $bakery->opening_hours = $openingHours; // Ajustar al nombre de la columna en la base de datos
                 if ($profilePicture !== null) {
-                    $bakery->profile_picture = $profilePicture; // Ajustar al nombre de la columna en la base de datos
+                    $bakery->profile_picture = $profilePicturePath; // Ajustar al nombre de la columna en la base de datos
                 }
                 $bakery->active = $active;
                 $bakery->save();
@@ -79,7 +96,7 @@ class UserController extends Controller
                     'name' => $name,
                     'address' => $address,
                     'opening_hours' => $openingHours, // Ajustar al nombre de la columna en la base de datos
-                    'profile_picture' => $profilePicture, // Ajustar al nombre de la columna en la base de datos
+                    'profile_picture' => $profilePicturePath, // Ajustar al nombre de la columna en la base de datos
                     'active' => $active,
                 ]);
             }

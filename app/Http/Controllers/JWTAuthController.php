@@ -49,6 +49,7 @@ class JWTAuthController extends Controller
 
             $userProfile = $this->userService->getUserProfile($user);
 
+            Log::debug('login success');
             return response()->json([
                 'token' => $token,
                 'user' => $userProfile

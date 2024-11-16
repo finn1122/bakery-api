@@ -29,6 +29,7 @@ class RegisterController extends Controller
 
     public function register(Request $request): JsonResponse
     {
+        Log::info('register');
         $validator = Validator::make($request->all(), [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -68,6 +69,7 @@ class RegisterController extends Controller
             }
 
             event(new Registered($user));
+            Log::debug('Usuario registrado exitosamente');
 
             return response()->json([
                 'message' => 'Usuario registrado exitosamente. Por favor verifica tu email.',
