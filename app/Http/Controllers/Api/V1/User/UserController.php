@@ -30,7 +30,8 @@ class UserController extends Controller
         $user = Auth::user();
 
         if ($user->bakery()->exists()) {
-            return response()->json($user->bakery, 200);
+            // Devolver el recurso BakeryResource en lugar de una respuesta JSON básica
+            return response()->json(new BakeryResource($user->bakery), 200);
         }
 
         return response()->json([], 200);
@@ -40,6 +41,17 @@ class UserController extends Controller
     {
         try {
             Log::info('createBakeryByUserId');
+            Log::debug($request->all());
+
+            // Verificar errores de subida de archivos
+            if ($request->hasFile('profilePicture')) {
+                $file = $request->file('profilePicture');
+                if ($file->getError() !== UPLOAD_ERR_OK) {
+                    Log::error('File upload error: ' . $file->getError());
+                    return response()->json(['error' => 'Error uploading the file. Please check the file size and try again.'], 400);
+                }
+            }
+
             // Manipular datos antes de la validación
             $request->merge([
                 'active' => filter_var($request->input('active'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE),
@@ -50,7 +62,7 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'address' => 'required|string|max:255',
                 'openingHours' => 'required|string|max:255',
-                'profilePicture' => 'nullable|file|mimes:jpg,jpeg,png|max:2048',
+                'profilePicture' => 'nullable|file|mimes:jpg,jpeg,png|max:16384',
                 'active' => 'required|boolean',
             ]);
 
@@ -60,13 +72,12 @@ class UserController extends Controller
 
             $validatedData = $validator->validated();
 
-            //$bakery = Bakery::create($data);
-
             // Almacenamiento de datos en variables individuales
             $name = $validatedData['name'];
             $address = $validatedData['address'];
             $openingHours = $validatedData['openingHours'];
-            $profilePicture = $request->hasFile('profilePicture') ? $request->file('profilePicture')->getClientOriginalName() : null;            $active = $validatedData['active'];
+            $profilePicture = $request->hasFile('profilePicture') ? $request->file('profilePicture')->getClientOriginalName() : null;
+            $active = $validatedData['active'];
 
             // Obtener el usuario
             $user = User::findOrFail($userId);
@@ -100,6 +111,7 @@ class UserController extends Controller
                     'active' => $active,
                 ]);
             }
+            Log::debug('success');
 
             return response()->json('success', 201);
 
@@ -108,4 +120,5 @@ class UserController extends Controller
             return response()->json(['error' => 'An error occurred while creating the bakery.'], 500);
         }
     }
+
 }
