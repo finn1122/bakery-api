@@ -9,6 +9,7 @@ class FtpRepositoryImpl implements FtpRepositoryInterface
 {
     // Definir una constante para la ruta del perfil de la panadería
     const BAKERY_PROFILE_PATH = 'bakery/%s/profile';
+    const BRANCH_PROFILE_PATH = 'branch/%s/branch/%s/profile';
 
     /**
      * Guardar el archivo en el servidor FTP.
@@ -42,6 +43,14 @@ class FtpRepositoryImpl implements FtpRepositoryInterface
     {
         // Directorio donde se almacenará la imagen de perfil de la panadería
         $directory = sprintf(self::BAKERY_PROFILE_PATH, $bakeryId);
+
+        return $this->saveFileToFtp($directory, $file);
+    }
+
+    public function saveBranchProfileFile($bakeryId, $branchId, $file)
+    {
+        // Directorio donde se almacenará la imagen de perfil de la panadería
+        $directory = sprintf(self::BAKERY_PROFILE_PATH, $bakeryId, $branchId);
 
         return $this->saveFileToFtp($directory, $file);
     }

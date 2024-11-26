@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('branch_users', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->constrained('branchs')->onDelete('cascade');
+            $table->foreignId('branch_id')->constrained('branches')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->boolean('active')->default(true);
             $table->timestamps();

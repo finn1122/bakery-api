@@ -19,6 +19,6 @@ class Bakery extends Model
     // Relación inversa con el User
     public function owner()
     {
-        return $this->belongsTo(User::class, 'owner_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

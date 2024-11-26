@@ -7,6 +7,8 @@ use App\Http\Middleware\JwtMiddleware;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\User\UserController;
 use App\Http\Controllers\Api\V1\Bakery\BakeryController;
+use App\Http\Controllers\Api\V1\Branch\BranchController;
+
 
 Route::get('/', function () {
     return response()->json([
@@ -34,8 +36,13 @@ Route::prefix('v1')->namespace('App\Http\Controllers\Api\V1')->group(function ()
 
         // [User]
         Route::prefix('user/{user_id}')->group(function () {
-            Route::get('bakery', [UserController::class, 'getBakery']);
-            Route::post('bakery', [UserController::class, 'createBakeryByUserId']);
+            Route::get('bakery', [BakeryController::class, 'getBakery']);
+            Route::post('bakery', [BakeryController::class, 'createBakeryByUserId']);
+        });
+
+        // [Bakery]
+        Route::prefix('bakery/{bakeryId}')->group(function () {
+            Route::post('branch', [BranchController::class, 'addBranchByBakeryId']);
         });
     });
 });

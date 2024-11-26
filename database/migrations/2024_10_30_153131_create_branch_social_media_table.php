@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('branch_social_media', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->constrained('branchs')->onDelete('cascade');
+            $table->foreignId('branch_id')->constrained('branches')->onDelete('cascade');
             $table->foreignId('social_media_id')->constrained('social_media')->onDelete('cascade');
             $table->string('url', 255);
             $table->boolean('active')->default(true);

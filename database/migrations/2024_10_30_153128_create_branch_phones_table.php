@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('branch_phones', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('branch_id')->constrained('branchs')->onDelete('cascade');
+            $table->foreignId('branch_id')->constrained('branches')->onDelete('cascade');
             $table->foreignId('phone_id')->constrained('phones')->onDelete('cascade');
             $table->string('number', 50);
             $table->boolean('active')->default(true);
