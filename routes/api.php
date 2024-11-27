@@ -41,8 +41,12 @@ Route::prefix('v1')->namespace('App\Http\Controllers\Api\V1')->group(function ()
         });
 
         // [Bakery]
-        Route::prefix('bakery/{bakeryId}')->group(function () {
+        Route::prefix('bakery/{bakery_id}')->group(function () {
             Route::post('branch', [BranchController::class, 'addBranchByBakeryId']);
+        });
+
+        Route::prefix('bakery/{bakery_id}')->group(function () {
+            Route::get('branches', [BranchController::class, 'getAllBranchesByBakeryId']);
         });
     });
 });

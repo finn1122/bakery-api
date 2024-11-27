@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api\V1\Branch;
 
 use App\Features\Ftp\Domain\Repositories\FtpRepositoryInterface;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\BranchResource;
 use App\Models\Bakery;
 use App\Models\Branch;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
@@ -101,5 +103,33 @@ class BranchController extends Controller
             Log::error($e->getMessage());
             return response()->json(['error' => 'An error occurred while creating the bakery.'], 500);
         }
+    }
+
+    public function getAllBranchesByBakeryId($bakery_id): JsonResponse
+    {
+        Log::info('getAllBranchesByBakeryId');
+        Log::debug($bakery_id);
+
+        // Encontrar la panadería por ID
+        $bakery = Bakery::find($bakery_id);
+
+        if (!$bakery) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bakery not found',
+            ], 404);
+        }
+
+        // Obtener todas las ramas asociadas con la panadería
+        $branches = $bakery->branches;
+
+        // Transformar las ramas usando BranchResource
+        $branchesResource = BranchResource::collection($branches);
+
+        // Devolver las ramas como respuesta JSON
+        return response()->json([
+            'success' => true,
+            'data' => $branchesResource,
+        ], 200);
     }
 }

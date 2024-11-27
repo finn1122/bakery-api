@@ -118,4 +118,6 @@ class BakeryController extends Controller
             return response()->json(['error' => 'An error occurred while creating the bakery.'], 500);
         }
     }
+
+
 }
