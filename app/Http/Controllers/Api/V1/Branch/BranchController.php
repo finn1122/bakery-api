@@ -127,9 +127,6 @@ class BranchController extends Controller
         $branchesResource = BranchResource::collection($branches);
 
         // Devolver las ramas como respuesta JSON
-        return response()->json([
-            'success' => true,
-            'data' => $branchesResource,
-        ], 200);
+        return response()->json($branchesResource, 200);
     }
 }
