@@ -43,6 +43,8 @@ Route::prefix('v1')->namespace('App\Http\Controllers\Api\V1')->group(function ()
         // [Bakery]
         Route::prefix('bakery/{bakery_id}')->group(function () {
             Route::post('branch', [BranchController::class, 'addBranchByBakeryId']);
+            Route::put('branch/{branch_id}', [BranchController::class, 'updateBranch']);
+
         });
 
         Route::prefix('bakery/{bakery_id}')->group(function () {

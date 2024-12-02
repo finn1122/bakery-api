@@ -129,4 +129,52 @@ class BranchController extends Controller
         // Devolver las ramas como respuesta JSON
         return response()->json($branchesResource, 200);
     }
+
+    public function updateBranch(Request $request, $bakery_id, $branch_id)
+    {
+        DB::beginTransaction();
+
+        try {
+            Log::info('updateBranch');
+            Log::debug($request->all());
+
+            // Validar datos entrantes
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'address' => 'required|string|max:255',
+                'openingHours' => 'sometimes|string|max:255',
+                'profilePicture' => 'required|file|mimes:jpg,jpeg,png|max:16384',
+                'active' => 'sometimes|boolean',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json($validator->errors(), 400);
+            }
+
+            $validatedData = $validator->validated();
+
+            // Obtener la panadería y la sucursal
+            $bakery = Bakery::findOrFail($bakery_id);
+            $branch = $bakery->branches()->findOrFail($branch_id);
+
+            Log::debug($branch);
+
+            // Actualizar datos de la sucursal
+            $branch->update($validatedData);
+
+            if ($request->hasFile('profilePicture')) {
+                $profilePicturePath = $this->ftpInterface->saveBranchProfileFile($bakery->id, $branch->id, $request->file('profilePicture'));
+                $branch->update(['profile_picture' => $profilePicturePath]);
+            }
+
+            DB::commit();
+            Log::debug('success');
+            return response()->json('success', 200);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error($e->getMessage());
+            return response()->json(['error' => 'An error occurred while updating the branch.'], 500);
+        }
+    }
 }
