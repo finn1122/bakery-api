@@ -157,15 +157,23 @@ class BranchController extends Controller
             $bakery = Bakery::findOrFail($bakery_id);
             $branch = $bakery->branches()->findOrFail($branch_id);
 
-            Log::debug($branch);
+            $name = $validatedData['name'];
+            $address = $validatedData['address'];
+            $openingHours = $validatedData['openingHours'];
+            $active = $validatedData['active'];
 
-            // Actualizar datos de la sucursal
-            $branch->update($validatedData);
+            $branch->name = $name;
+            $branch->address = $address;
+            $branch->opening_hours = $openingHours;
+            $branch->active = $active;
 
             if ($request->hasFile('profilePicture')) {
                 $profilePicturePath = $this->ftpInterface->saveBranchProfileFile($bakery->id, $branch->id, $request->file('profilePicture'));
-                $branch->update(['profile_picture' => $profilePicturePath]);
+                $branch->profile_picture = $profilePicturePath;
             }
+
+            $branch->save();
+
 
             DB::commit();
             Log::debug('success');
