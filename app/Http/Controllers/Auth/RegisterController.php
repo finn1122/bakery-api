@@ -47,7 +47,7 @@ class RegisterController extends Controller
             'active' => false, // Usuario inactivo hasta verificar email
         ]);
 
-        $user->assignRole('admin');
+        $user->assignRole('bakery');
 
         // Generar URL de verificación
         $verificationUrl = URL::temporarySignedRoute(
